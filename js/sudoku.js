@@ -16,6 +16,9 @@ document.addEventListener("DOMContentLoaded", () => {
 		[8, 6, 7, 4, 1, 5, 9, 2, 3],
 	];
 
+	// Timers
+	let hideNotificationTimer = null;
+
 	// Number things
 	const selectNumberElements = document.querySelectorAll(".number");
 
@@ -99,6 +102,105 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	}
 
+	function showNotification() {
+		const notificationElement = document.createElement("div");
+		notificationElement.className = "notification notification__show";
+		notificationElement.id = "notification";
+		notificationElement.innerHTML = `<svg
+				version="1.1"
+				class="notification__warning"
+				xmlns="http://www.w3.org/2000/svg"
+				xmlns:xlink="http://www.w3.org/1999/xlink"
+				x="0px"
+				y="0px"
+				viewBox="0 0 416.979 416.979"
+				style="enable-background: new 0 0 416.979 416.979"
+				xml:space="preserve"
+			>
+				<g>
+					<path
+						d="M356.004,61.156c-81.37-81.47-213.377-81.551-294.848-0.182c-81.47,81.371-81.552,213.379-0.181,294.85 c81.369,81.47,213.378,81.551,294.849,0.181C437.293,274.636,437.375,142.626,356.004,61.156z M237.6,340.786 c0,3.217-2.607,5.822-5.822,5.822h-46.576c-3.215,0-5.822-2.605-5.822-5.822V167.885c0-3.217,2.607-5.822,5.822-5.822h46.576 c3.215,0,5.822,2.604,5.822,5.822V340.786z M208.49,137.901c-18.618,0-33.766-15.146-33.766-33.765 c0-18.617,15.147-33.766,33.766-33.766c18.619,0,33.766,15.148,33.766,33.766C242.256,122.755,227.107,137.901,208.49,137.901z"
+					/>
+				</g>
+			</svg>
+			<p>That is not the number... :(</p>
+			<button class="notification-btn-undo">Undo?</button>
+			<div id="notification-close" class="notification__close">
+				<svg
+					version="1.1"
+					class="ntfction__close"
+					xmlns="http://www.w3.org/2000/svg"
+					xmlns:xlink="http://www.w3.org/1999/xlink"
+					x="0px"
+					y="0px"
+					viewBox="0 0 356.218 356.218"
+					style="enable-background: new 0 0 356.218 356.218"
+					xml:space="preserve"
+				>
+					<g>
+						<path
+							d="M350.676,261.501c7.388,7.389,7.388,19.365,0.001,26.754l-62.421,62.421c-7.39,7.389-19.366,7.387-26.755,0l-83.392-83.394 l-83.395,83.394c-7.386,7.388-19.364,7.387-26.752,0L5.541,288.254c-7.388-7.388-7.387-19.364,0.001-26.75l83.395-83.395 L5.543,94.715c-7.387-7.387-7.387-19.365-0.001-26.751L67.965,5.542c7.387-7.388,19.365-7.387,26.75,0l83.395,83.395l83.393-83.395 c7.388-7.387,19.364-7.388,26.753,0l62.422,62.421c7.387,7.388,7.388,19.366,0,26.753l-83.395,83.393L350.676,261.501z"
+						/>
+					</g>
+				</svg>
+			</div>
+`;
+
+		document.body.appendChild(notificationElement);
+
+		// Notification things
+		closeNotificationElement = document.querySelector(
+			"#notification-close",
+		);
+		undoNotificationButton = document.querySelector(
+			".notification-btn-undo",
+		);
+
+		// Notiffication actions (to do: 1/2)
+		closeNotificationElement.addEventListener("click", () => {
+			hideNotification();
+		});
+		undoNotificationButton.addEventListener("click", () => {
+			console.log(
+				"You clicked the undo button! (is the animation working correctly yet ? if so, come make the logic for the button. :D)",
+			);
+		});
+
+		hideNotificationTimer = setTimeout(() => {
+			hideNotification();
+		}, 5000);
+	}
+
+	function hideNotification() {
+		notificationElement = document.querySelector("#notification");
+		if (notificationElement) {
+			notificationElement.classList.remove("notification__show");
+			notificationElement.classList.add("notification__hide");
+			setTimeout(() => {
+				if (
+					!Array.from(notificationElement.classList).filter(
+						(item) => {
+							return item == "notification__show";
+						},
+					)[0]
+				) {
+					notificationElement.remove();
+				}
+			}, 400);
+		}
+	}
+
+	function forceHideNotification() {
+		if (hideNotificationTimer) {
+			clearTimeout(hideNotificationTimer);
+			hideNotificationTimer = null;
+		}
+		notificationElement = document.querySelector("#notification");
+		if (notificationElement) {
+			notificationElement.remove();
+		}
+	}
+
 	function checkSudokuPosition() {
 		currentSelectedCell = document.querySelector(".selected.main-selected");
 		if (currentSelectedCell.innerText != "") {
@@ -117,13 +219,16 @@ document.addEventListener("DOMContentLoaded", () => {
 				currentSelectedCell.innerText
 			) {
 				currentSelectedCell.classList.remove("error");
+				forceHideNotification();
 				return true;
 			} else {
 				currentSelectedCell.classList.add("error");
+				showNotification();
 				return false;
 			}
 		} else {
 			currentSelectedCell.classList.remove("error");
+			forceHideNotification();
 			return true;
 		}
 	}
@@ -153,7 +258,4 @@ document.addEventListener("DOMContentLoaded", () => {
 			checkSudokuPosition();
 		});
 	});
-
-	// With using things like: sudokuCellElements[27].parentElement.children[3];
-	// we can get the exact position and iterate from a specific row. the only problem would be to iterate from columns to columns, ill figure out that tomorrow anyway. Good luck, i hope you still have the things i had in mind for this project <3.
 });

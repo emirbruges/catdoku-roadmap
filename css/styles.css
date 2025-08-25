@@ -33,12 +33,127 @@
 	box-sizing: border-box;
 }
 
-.grid {
-	display: flex;
+body {
+	font-family: Mukta, sans-serif;
+	display: grid;
 	justify-content: center;
 	align-items: center;
-	min-height: 100vh;
+	height: 100vh;
 	background-color: var(--catppuccin-base);
+}
+
+/* Notification animations */
+
+@keyframes countdown-bar {
+	0% {
+		width: 100%;
+	}
+	100% {
+		width: 0%;
+	}
+}
+
+@keyframes warning {
+	0% {
+		opacity: 0;
+		top: 0;
+	}
+	5% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+		top: 2rem;
+	}
+}
+
+@keyframes warning-hide {
+	0% {
+		opacity: 1;
+		top: 2rem;
+	}
+	95% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 0;
+		top: 0;
+	}
+}
+
+.notification {
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+	color: var(--catppuccin-surface-0);
+	background-color: var(--catppuccin-flamingo);
+	border-radius: 0.5rem;
+	overflow: hidden;
+	display: none;
+	justify-content: center;
+	align-items: center;
+	gap: 1rem;
+
+	.notification-btn-undo {
+		background-color: transparent;
+		font-weight: bold;
+		color: var(--catppuccin-blue);
+	}
+
+	.notification__warning {
+		position: relative;
+		width: 1.5rem;
+		left: 0.5rem;
+		fill: var(--catppuccin-maroon);
+	}
+
+	.notification__close {
+		background-color: var(--catppuccin-maroon);
+		padding: 1rem;
+		display: flex;
+		cursor: pointer;
+
+		svg {
+			width: 1rem;
+			fill: var(--catppuccin-red);
+		}
+	}
+}
+
+.notification::after {
+	content: "";
+	position: absolute;
+	left: 0;
+	bottom: 0;
+	width: 100%;
+	height: 5px;
+	background-color: var(--catppuccin-red);
+	animation: countdown-bar 5s linear forwards;
+}
+
+.notification__hide {
+	display: flex;
+	animation: warning-hide 400ms ease-in-out forwards;
+}
+
+.notification__show {
+	display: flex;
+	animation: warning 400ms ease-in-out forwards;
+}
+
+.grid {
+	padding: 1.5rem;
+	justify-content: center;
+	align-items: center;
+	display: flex;
+	min-height: 100vh;
+}
+
+button {
+	font-family: inherit;
+	font-size: 1rem;
+	border: none;
+	cursor: pointer;
 }
 
 /* Sudoku section */
@@ -140,10 +255,9 @@
 	/* flex-direction: grid; */
 
 	width: 225px;
-	height: 225px;
-	margin-left: 50px;
-	align-items: baseline;
-	/* justify-content: center; */
+	margin-left: 5rem;
+	align-items: center;
+	justify-content: center;
 	grid-template-columns: repeat(4, 1fr);
 	grid-template-rows: repeat(3, 1fr);
 	grid-template-areas:
