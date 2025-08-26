@@ -4,6 +4,9 @@ document.addEventListener("DOMContentLoaded", () => {
 	const sudokuCellElements = document.querySelectorAll('[class^="column-"]');
 	const sudokuParentElement = document.querySelector(".sudoku");
 
+	// Format: [number, row, column] (yes a stack of arrays something like 1*3*x).
+	const sudokuMovesStack = new Stack(); // From stack.js
+
 	const sudoku = [
 		[6, 1, 9, 5, 4, 2, 3, 7, 8],
 		[2, 7, 8, 6, 9, 3, 1, 5, 4],
@@ -76,22 +79,60 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	}
 
+	function undoAction() {
+		// Variables
+		isStackEmpty = sudokuMovesStack.isEmpty();
+		if (!isStackEmpty) {
+			currentStackState = sudokuMovesStack.peek();
+			number = currentStackState[0];
+			row = currentStackState[1];
+			column = currentStackState[2];
+
+			rowElement = document.querySelector("." + row);
+			cellElement = rowElement.querySelector("." + column);
+			cellElement.innerText = number;
+
+			sudokuMovesStack.pop();
+
+			deselectPreviousCell();
+			selectAllNumbers(cellElement);
+			selectAllShadows(cellElement);
+			checkSudokuPosition();
+		}
+	}
+
 	function setEditDelNumber(number) {
-		currentSelectedCell = document.querySelector(".selected.main-selected");
+		if (number.classList[1] == "undo-number") {
+			console.log("llegue");
+			undoAction();
+			return true;
+		}
+
+		currentSelectedCell = document.querySelector(".main-selected");
+
 		if (currentSelectedCell) {
+			// Save on the stack previous state before logic
+			sudokuMovesStack.push([
+				currentSelectedCell.innerText,
+				currentSelectedCell.parentElement.classList[0],
+				currentSelectedCell.classList[0],
+			]);
+
 			cellFilledByUser = Array.from(currentSelectedCell.classList).filter(
 				(item) => {
 					return item == "user-number";
 				},
-			);
-			if (currentSelectedCell.innerText == "" || cellFilledByUser[0]) {
+			)[0];
+
+			if (currentSelectedCell.innerText == "" || cellFilledByUser) {
 				if (number.innerText != "") {
 					currentSelectedCell.innerText = number.innerText;
 					currentSelectedCell.classList.add("user-number");
 					deselectPreviousCell();
 					selectAllNumbers(currentSelectedCell);
 					selectAllShadows(currentSelectedCell);
-				} else {
+				} else if (number.classList[1] == "erase-number") {
+					// This is a static class so it will always be like this
 					currentSelectedCell.innerText = number.innerText;
 					currentSelectedCell.classList.remove("user-number");
 					deselectPreviousCell();
@@ -103,10 +144,11 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	function showNotification() {
-		const notificationElement = document.createElement("div");
-		notificationElement.className = "notification notification__show";
-		notificationElement.id = "notification";
-		notificationElement.innerHTML = `<svg
+		if (!document.querySelector("#notification")) {
+			const notificationElement = document.createElement("div");
+			notificationElement.className = "notification notification__show";
+			notificationElement.id = "notification";
+			notificationElement.innerHTML = `<svg
 				version="1.1"
 				class="notification__warning"
 				xmlns="http://www.w3.org/2000/svg"
@@ -146,29 +188,28 @@ document.addEventListener("DOMContentLoaded", () => {
 			</div>
 `;
 
-		document.body.appendChild(notificationElement);
+			document.body.appendChild(notificationElement);
 
-		// Notification things
-		closeNotificationElement = document.querySelector(
-			"#notification-close",
-		);
-		undoNotificationButton = document.querySelector(
-			".notification-btn-undo",
-		);
-
-		// Notiffication actions (to do: 1/2)
-		closeNotificationElement.addEventListener("click", () => {
-			hideNotification();
-		});
-		undoNotificationButton.addEventListener("click", () => {
-			console.log(
-				"You clicked the undo button! (is the animation working correctly yet ? if so, come make the logic for the button. :D)",
+			// Notification things
+			closeNotificationElement = document.querySelector(
+				"#notification-close",
 			);
-		});
+			undoNotificationButton = document.querySelector(
+				".notification-btn-undo",
+			);
 
-		hideNotificationTimer = setTimeout(() => {
-			hideNotification();
-		}, 5000);
+			// Notiffication actions (to do: 1/2)
+			closeNotificationElement.addEventListener("click", () => {
+				hideNotification();
+			});
+			undoNotificationButton.addEventListener("click", () => {
+				undoAction();
+			});
+
+			hideNotificationTimer = setTimeout(() => {
+				hideNotification();
+			}, 5000);
+		}
 	}
 
 	function hideNotification() {
@@ -203,33 +244,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
 	function checkSudokuPosition() {
 		currentSelectedCell = document.querySelector(".selected.main-selected");
-		if (currentSelectedCell.innerText != "") {
-			currentColumn =
-				Array.from(currentSelectedCell.classList).filter((item) => {
-					return item.startsWith("column-");
-				})[0][7] - 1;
-			currentRow =
-				Array.from(currentSelectedCell.parentElement.classList).filter(
-					(item) => {
+		if (currentSelectedCell) {
+			if (currentSelectedCell.innerText != "") {
+				currentColumn =
+					Array.from(currentSelectedCell.classList).filter((item) => {
+						return item.startsWith("column-");
+					})[0][7] - 1;
+				currentRow =
+					Array.from(
+						currentSelectedCell.parentElement.classList,
+					).filter((item) => {
 						return item.startsWith("row-");
-					},
-				)[0][4] - 1;
-			if (
-				sudoku[currentRow][currentColumn] ==
-				currentSelectedCell.innerText
-			) {
+					})[0][4] - 1;
+				if (
+					sudoku[currentRow][currentColumn] ==
+					currentSelectedCell.innerText
+				) {
+					currentSelectedCell.classList.remove("error");
+					forceHideNotification();
+					return true;
+				} else {
+					currentSelectedCell.classList.add("error");
+					showNotification();
+					return false;
+				}
+			} else {
 				currentSelectedCell.classList.remove("error");
 				forceHideNotification();
 				return true;
-			} else {
-				currentSelectedCell.classList.add("error");
-				showNotification();
-				return false;
 			}
-		} else {
-			currentSelectedCell.classList.remove("error");
-			forceHideNotification();
-			return true;
 		}
 	}
 
