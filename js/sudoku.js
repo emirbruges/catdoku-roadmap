@@ -4,6 +4,8 @@ document.addEventListener("DOMContentLoaded", () => {
 	const sudokuCellElements = document.querySelectorAll('[class^="column-"]');
 	const sudokuParentElement = document.querySelector(".sudoku");
 
+	let currentNoteMode = false; // Boolean
+
 	// Format: [number, row, column] (yes a stack of arrays something like 1*3*x).
 	const sudokuMovesStack = new Stack(); // From stack.js
 
@@ -41,12 +43,41 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	}
 
+	function highlightNotes() {
+		currentSelectedCell = document.querySelector(".selected.main-selected");
+		if (currentSelectedCell) {
+			currentSelectedNumber =
+				currentSelectedCell.querySelector(".cell-number");
+			if (currentSelectedNumber.innerText != "") {
+				sudokuCellElements.forEach((cell) => {
+					cell.querySelectorAll(
+						".note-active.number-" +
+							currentSelectedNumber.innerText,
+					).forEach((note) => {
+						note.classList.add("note-highlight");
+					});
+				});
+			}
+		}
+	}
+
+	function disableAllNotesHighlight() {
+		sudokuCellElements.forEach((cell) => {
+			cell.querySelectorAll(".note-highlight").forEach((note) => {
+				note.classList.remove("note-highlight");
+			});
+		});
+	}
+
 	function selectAllNumbers(firstElement) {
-		if (firstElement.innerText != "") {
+		if (firstElement.querySelector(".cell-number").innerText != "") {
 			firstElement.classList.add("main-selected");
 			Array.from(sudokuCellElements)
 				.filter((item) => {
-					return item.innerText === firstElement.innerText;
+					return (
+						item.querySelector(".cell-number").innerText ===
+						firstElement.querySelector(".cell-number").innerText
+					);
 				})
 				.forEach((element) => {
 					element.classList.add("selected");
@@ -87,10 +118,17 @@ document.addEventListener("DOMContentLoaded", () => {
 			number = currentStackState[0];
 			row = currentStackState[1];
 			column = currentStackState[2];
+			notes = currentStackState[3];
 
 			rowElement = document.querySelector("." + row);
 			cellElement = rowElement.querySelector("." + column);
-			cellElement.innerText = number;
+			numberCellElement = cellElement.querySelector(".cell-number");
+			numberCellElement.innerText = number;
+			notes.forEach((note) => {
+				cellElement
+					.querySelector(".note.number-" + note)
+					.classList.add("note-active");
+			});
 
 			sudokuMovesStack.pop();
 
@@ -101,43 +139,75 @@ document.addEventListener("DOMContentLoaded", () => {
 		}
 	}
 
+	function clearNotesFromCell(cell) {
+		cell.querySelectorAll(".note").forEach((element) => {
+			element.classList.remove("note-active");
+		});
+	}
+
 	function setEditDelNumber(number) {
 		if (number.classList[1] == "undo-number") {
-			console.log("llegue");
 			undoAction();
+			return true;
+		} else if (number.classList[1] == "note-number") {
+			currentNoteMode = !currentNoteMode;
+			number.classList.toggle("selected");
 			return true;
 		}
 
+		// array.forEach((element) => {});
 		currentSelectedCell = document.querySelector(".main-selected");
 
 		if (currentSelectedCell) {
 			// Save on the stack previous state before logic
+			statusOfNotes = [];
+			currentSelectedCell
+				.querySelectorAll(".note-active")
+				.forEach((element) => {
+					statusOfNotes.push(element.innerText);
+				});
 			sudokuMovesStack.push([
-				currentSelectedCell.innerText,
+				currentSelectedCell.querySelector(".cell-number").innerText,
 				currentSelectedCell.parentElement.classList[0],
 				currentSelectedCell.classList[0],
+				statusOfNotes,
 			]);
 
-			cellFilledByUser = Array.from(currentSelectedCell.classList).filter(
+			numberCellElement =
+				currentSelectedCell.querySelector(".cell-number");
+
+			cellFilledByUser = Array.from(numberCellElement.classList).filter(
 				(item) => {
 					return item == "user-number";
 				},
 			)[0];
 
-			if (currentSelectedCell.innerText == "" || cellFilledByUser) {
-				if (number.innerText != "") {
-					currentSelectedCell.innerText = number.innerText;
-					currentSelectedCell.classList.add("user-number");
+			if (numberCellElement.innerText == "" || cellFilledByUser) {
+				if (number.classList[1] == "erase-number") {
+					numberCellElement.innerText = number.innerText;
+					numberCellElement.classList.remove("user-number");
+					clearNotesFromCell(currentSelectedCell);
 					deselectPreviousCell();
 					selectAllNumbers(currentSelectedCell);
 					selectAllShadows(currentSelectedCell);
-				} else if (number.classList[1] == "erase-number") {
+				} else if (
+					number.classList[1].startsWith("number-") &&
+					!currentNoteMode
+				) {
 					// This is a static class so it will always be like this
-					currentSelectedCell.innerText = number.innerText;
-					currentSelectedCell.classList.remove("user-number");
+					numberCellElement.innerText = number.innerText;
+					numberCellElement.classList.add("user-number");
+					clearNotesFromCell(currentSelectedCell);
 					deselectPreviousCell();
 					selectAllNumbers(currentSelectedCell);
 					selectAllShadows(currentSelectedCell);
+				} else if (
+					number.classList[1].startsWith("number-") &&
+					currentNoteMode
+				) {
+					currentSelectedCell
+						.querySelector(".note.number-" + number.innerText)
+						.classList.toggle("note-active");
 				}
 			}
 		}
@@ -245,7 +315,10 @@ document.addEventListener("DOMContentLoaded", () => {
 	function checkSudokuPosition() {
 		currentSelectedCell = document.querySelector(".selected.main-selected");
 		if (currentSelectedCell) {
-			if (currentSelectedCell.innerText != "") {
+			if (
+				currentSelectedCell.querySelector(".cell-number").innerText !=
+				""
+			) {
 				currentColumn =
 					Array.from(currentSelectedCell.classList).filter((item) => {
 						return item.startsWith("column-");
@@ -258,7 +331,7 @@ document.addEventListener("DOMContentLoaded", () => {
 					})[0][4] - 1;
 				if (
 					sudoku[currentRow][currentColumn] ==
-					currentSelectedCell.innerText
+					currentSelectedCell.querySelector(".cell-number").innerText
 				) {
 					currentSelectedCell.classList.remove("error");
 					forceHideNotification();
@@ -291,6 +364,8 @@ document.addEventListener("DOMContentLoaded", () => {
 			deselectPreviousCell();
 			selectAllNumbers(element);
 			selectAllShadows(element);
+			disableAllNotesHighlight();
+			highlightNotes();
 		});
 	});
 
