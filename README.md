@@ -66,7 +66,7 @@ Development of cat images in cells and full mobile responsiveness is still ongoi
 
 1. Clone this repository:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/CatDoku.git
+   git clone https://github.com/emirbruges/catdoku-roadmap.git
 
 	2.	Open index.html in your browser.
 	3.	Play and explore the current features.
