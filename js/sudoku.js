@@ -1,7 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
 	// Sudoku things
 	const gridElement = document.querySelector(".grid");
-	const sudokuCellElements = document.querySelectorAll('[class^="column-"]');
+	const sudokuColumnElements =
+		document.querySelectorAll('[class^="column-"]');
 	const sudokuParentElement = document.querySelector(".sudoku");
 
 	let currentNoteMode = false; // Boolean
@@ -49,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			currentSelectedNumber =
 				currentSelectedCell.querySelector(".cell-number");
 			if (currentSelectedNumber.innerText != "") {
-				sudokuCellElements.forEach((cell) => {
+				sudokuColumnElements.forEach((cell) => {
 					cell.querySelectorAll(
 						".note-active.number-" +
 							currentSelectedNumber.innerText,
@@ -62,17 +63,80 @@ document.addEventListener("DOMContentLoaded", () => {
 	}
 
 	function disableAllNotesHighlight() {
-		sudokuCellElements.forEach((cell) => {
+		sudokuColumnElements.forEach((cell) => {
 			cell.querySelectorAll(".note-highlight").forEach((note) => {
 				note.classList.remove("note-highlight");
 			});
 		});
 	}
 
+	function removeNotesFromBox() {
+		cell = document.querySelector(".main-selected");
+		number = cell.querySelector(".cell-number").innerText;
+		if (!number) return;
+
+		const currentRow =
+			Array.from(cell.parentElement.classList).filter((item) => {
+				return item.startsWith("row-");
+			})[0][4] - 1;
+		const currentColumn =
+			Array.from(cell.classList).filter((item) => {
+				return item.startsWith("column-");
+			})[0][7] - 1;
+
+		const boxRowStart = Math.floor(currentRow / 3) * 3;
+		const boxColStart = Math.floor(currentColumn / 3) * 3;
+
+		for (let r = boxRowStart; r < boxRowStart + 3; r++) {
+			const rowClass = "row-" + (r + 1);
+			const rowElement = document.querySelector("." + rowClass);
+			if (!rowElement) continue;
+
+			for (let c = boxColStart; c < boxColStart + 3; c++) {
+				const colClass = "column-" + (c + 1);
+				const targetCell = rowElement.querySelector("." + colClass);
+				if (!targetCell) continue;
+
+				const noteEl = targetCell.querySelector(
+					".note.number-" + number,
+				);
+				if (noteEl) {
+					noteEl.classList.remove("note-active");
+				}
+			}
+		}
+	}
+
+	function removeNotesAround() {
+		cell = document.querySelector(".main-selected");
+		number = cell.querySelector(".cell-number").innerText;
+		if (!number) return;
+
+		const rowChildren = Array.from(cell.parentElement.children);
+		rowChildren.forEach((c) => {
+			const noteEl = c.querySelector(".note.number-" + number);
+			if (noteEl) noteEl.classList.remove("note-active");
+		});
+
+		const columnClass = Array.from(cell.classList).filter((item) => {
+			return item.startsWith("column-");
+		})[0];
+		Array.from(sudokuColumnElements)
+			.filter((item) => {
+				return item.classList[0] == columnClass;
+			})
+			.forEach((c) => {
+				const noteEl = c.querySelector(".note.number-" + number);
+				if (noteEl) noteEl.classList.remove("note-active");
+			});
+
+		removeNotesFromBox(cell, number);
+	}
+
 	function selectAllNumbers(firstElement) {
 		if (firstElement.querySelector(".cell-number").innerText != "") {
 			firstElement.classList.add("main-selected");
-			Array.from(sudokuCellElements)
+			Array.from(sudokuColumnElements)
 				.filter((item) => {
 					return (
 						item.querySelector(".cell-number").innerText ===
@@ -100,7 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		// Columns
 		const columnName = firstElement.classList[0];
-		const columnElementsWoInitial = Array.from(sudokuCellElements).filter(
+		const columnElementsWoInitial = Array.from(sudokuColumnElements).filter(
 			(item) => {
 				return item.classList[0] == columnName && item != firstElement;
 			},
@@ -110,36 +174,80 @@ document.addEventListener("DOMContentLoaded", () => {
 		});
 	}
 
-	function undoAction() {
-		// Variables
-		isStackEmpty = sudokuMovesStack.isEmpty();
-		if (!isStackEmpty) {
-			currentStackState = sudokuMovesStack.peek();
-			number = currentStackState[0];
-			row = currentStackState[1];
-			column = currentStackState[2];
-			notes = currentStackState[3];
+	function getBoardState() {
+		const rows = document.querySelectorAll("[class^='row-']");
+		let state = [];
 
-			rowElement = document.querySelector("." + row);
-			cellElement = rowElement.querySelector("." + column);
-			numberCellElement = cellElement.querySelector(".cell-number");
-			numberCellElement.innerText = number;
-			notes.forEach((note) => {
-				cellElement
-					.querySelector(".note.number-" + note)
-					.classList.add("note-active");
+		rows.forEach((row) => {
+			let rowState = []; // Reinicializar para cada fila
+			row.querySelectorAll("[class^='column-']").forEach((cell) => {
+				const numberEl = cell.querySelector(".cell-number");
+				const number = numberEl.innerText;
+				const isUser = numberEl.classList.contains("user-number");
+				const notes = Array.from(
+					cell.querySelectorAll(".note.note-active"),
+				).map((n) => n.innerText);
+
+				rowState.push({ number, isUser, notes });
 			});
+			state.push(rowState);
+		});
 
+		return state;
+	}
+
+	function setBoardState(state) {
+		const rows = document.querySelectorAll("[class^='row-']");
+
+		rows.forEach((row, rowIndex) => {
+			row.querySelectorAll("[class^='column-']").forEach(
+				(cell, colIndex) => {
+					const cellState = state[rowIndex][colIndex];
+					const numberEl = cell.querySelector(".cell-number");
+
+					// Establecer el número
+					numberEl.innerText = cellState.number;
+
+					// Aplicar o remover la clase user-number
+					if (cellState.isUser) {
+						numberEl.classList.add("user-number");
+					} else {
+						numberEl.classList.remove("user-number");
+					}
+
+					// Limpiar todas las notas activas
+					cell.querySelectorAll(".note").forEach((noteEl) =>
+						noteEl.classList.remove("note-active"),
+					);
+
+					// Restaurar las notas activas
+					cellState.notes.forEach((noteValue) => {
+						const noteEl = cell.querySelector(
+							".note.number-" + noteValue,
+						);
+						if (noteEl) {
+							noteEl.classList.add("note-active");
+						}
+					});
+				},
+			);
+		});
+	}
+
+	function pushBoardState() {
+		const snapshot = JSON.parse(JSON.stringify(getBoardState()));
+		sudokuMovesStack.push(snapshot);
+	}
+
+	function undoAction() {
+		if (sudokuMovesStack.size() > 0) {
+			const prevState = sudokuMovesStack.peek();
 			sudokuMovesStack.pop();
-
-			deselectPreviousCell();
-			selectAllNumbers(cellElement);
-			selectAllShadows(cellElement);
-			checkSudokuPosition();
+			setBoardState(prevState);
 		}
 	}
 
-	function clearNotesFromCell(cell) {
+	function clearNotesFromCurrentCell(cell) {
 		cell.querySelectorAll(".note").forEach((element) => {
 			element.classList.remove("note-active");
 		});
@@ -148,6 +256,9 @@ document.addEventListener("DOMContentLoaded", () => {
 	function setEditDelNumber(number) {
 		if (number.classList[1] == "undo-number") {
 			undoAction();
+			deselectPreviousCell();
+			selectAllNumbers(currentSelectedCell);
+			selectAllShadows(currentSelectedCell);
 			return true;
 		} else if (number.classList[1] == "note-number") {
 			currentNoteMode = !currentNoteMode;
@@ -160,18 +271,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 		if (currentSelectedCell) {
 			// Save on the stack previous state before logic
-			statusOfNotes = [];
-			currentSelectedCell
-				.querySelectorAll(".note-active")
-				.forEach((element) => {
-					statusOfNotes.push(element.innerText);
-				});
-			sudokuMovesStack.push([
-				currentSelectedCell.querySelector(".cell-number").innerText,
-				currentSelectedCell.parentElement.classList[0],
-				currentSelectedCell.classList[0],
-				statusOfNotes,
-			]);
+			pushBoardState();
 
 			numberCellElement =
 				currentSelectedCell.querySelector(".cell-number");
@@ -186,7 +286,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				if (number.classList[1] == "erase-number") {
 					numberCellElement.innerText = number.innerText;
 					numberCellElement.classList.remove("user-number");
-					clearNotesFromCell(currentSelectedCell);
+					clearNotesFromCurrentCell(currentSelectedCell);
 					deselectPreviousCell();
 					selectAllNumbers(currentSelectedCell);
 					selectAllShadows(currentSelectedCell);
@@ -197,10 +297,12 @@ document.addEventListener("DOMContentLoaded", () => {
 					// This is a static class so it will always be like this
 					numberCellElement.innerText = number.innerText;
 					numberCellElement.classList.add("user-number");
-					clearNotesFromCell(currentSelectedCell);
+					clearNotesFromCurrentCell(currentSelectedCell);
 					deselectPreviousCell();
 					selectAllNumbers(currentSelectedCell);
 					selectAllShadows(currentSelectedCell);
+					removeNotesAround();
+					removeNotesFromBox();
 				} else if (
 					number.classList[1].startsWith("number-") &&
 					currentNoteMode
@@ -274,6 +376,9 @@ document.addEventListener("DOMContentLoaded", () => {
 			});
 			undoNotificationButton.addEventListener("click", () => {
 				undoAction();
+				deselectPreviousCell();
+				selectAllNumbers(currentSelectedCell);
+				selectAllShadows(currentSelectedCell);
 			});
 
 			hideNotificationTimer = setTimeout(() => {
@@ -359,7 +464,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	});
 
 	// For each cell on the sudoku wait for a click to select it.
-	sudokuCellElements.forEach((element) => {
+	sudokuColumnElements.forEach((element) => {
 		element.addEventListener("click", () => {
 			deselectPreviousCell();
 			selectAllNumbers(element);
@@ -375,5 +480,79 @@ document.addEventListener("DOMContentLoaded", () => {
 			setEditDelNumber(element);
 			checkSudokuPosition();
 		});
+	});
+
+	document.addEventListener("keydown", (event) => {
+		currentSelectedCell = document.querySelector(".main-selected");
+		numbers = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
+		if (currentSelectedCell) {
+			if (event.key == "ArrowUp") {
+				rowSelected = currentSelectedCell.parentElement;
+				if (rowSelected.previousElementSibling != null) {
+					nextRowSelected = rowSelected.previousElementSibling;
+					nextColumnSelected = nextRowSelected.querySelector(
+						"." + currentSelectedCell.classList[0],
+					);
+					currentSelectedCell.classList.remove("selected");
+					currentSelectedCell.classList.remove("main-selected");
+					nextColumnSelected.classList.add("selected");
+					nextColumnSelected.classList.add("main-selected");
+					deselectPreviousCell();
+					selectAllNumbers(nextColumnSelected);
+					selectAllShadows(nextColumnSelected);
+				}
+			} else if (event.key == "ArrowDown") {
+				rowSelected = currentSelectedCell.parentElement;
+				if (rowSelected.nextElementSibling != null) {
+					nextRowSelected = rowSelected.nextElementSibling;
+					nextColumnSelected = nextRowSelected.querySelector(
+						"." + currentSelectedCell.classList[0],
+					);
+					currentSelectedCell.classList.remove("selected");
+					currentSelectedCell.classList.remove("main-selected");
+					nextColumnSelected.classList.add("selected");
+					nextColumnSelected.classList.add("main-selected");
+					deselectPreviousCell();
+					selectAllNumbers(nextColumnSelected);
+					selectAllShadows(nextColumnSelected);
+				}
+			} else if (event.key == "ArrowLeft") {
+				if (currentSelectedCell.previousElementSibling != null) {
+					nextColumnSelected =
+						currentSelectedCell.previousElementSibling;
+					currentSelectedCell.classList.remove("selected");
+					currentSelectedCell.classList.remove("main-selected");
+					nextColumnSelected.classList.add("selected");
+					nextColumnSelected.classList.add("main-selected");
+					deselectPreviousCell();
+					selectAllNumbers(nextColumnSelected);
+					selectAllShadows(nextColumnSelected);
+				}
+			} else if (event.key == "ArrowRight") {
+				if (currentSelectedCell.nextElementSibling != null) {
+					nextColumnSelected = currentSelectedCell.nextElementSibling;
+					currentSelectedCell.classList.remove("selected");
+					currentSelectedCell.classList.remove("main-selected");
+					nextColumnSelected.classList.add("selected");
+					nextColumnSelected.classList.add("main-selected");
+					deselectPreviousCell();
+					selectAllNumbers(nextColumnSelected);
+					selectAllShadows(nextColumnSelected);
+				}
+			} else if (event.key.toLowerCase() == "n") {
+				currentNoteMode = !currentNoteMode;
+				document
+					.querySelector(".note-number")
+					.classList.toggle("selected");
+			} else if (numbers.includes(event.key)) {
+				element = document.querySelector(".number.number-" + event.key);
+				setEditDelNumber(element);
+				checkSudokuPosition();
+			} else if (event.key == "0") {
+				element = document.querySelector(".number.erase-number");
+				setEditDelNumber(element);
+				checkSudokuPosition();
+			}
+		}
 	});
 });
