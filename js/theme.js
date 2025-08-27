@@ -15,9 +15,9 @@ window.addEventListener("DOMContentLoaded", () => {
 	}
 
 	function toggleTheme() {
-		const isLight = document.documentElement.classList.toggle("dark-theme");
-		localStorage.setItem("theme", isLight ? "dark" : "light");
-		document.getElementById("theme-toggle").checked = isLight;
+		const isDark = document.documentElement.classList.toggle("dark-theme");
+		localStorage.setItem("theme", isDark ? "dark" : "light");
+		document.getElementById("theme-toggle").checked = isDark;
 	}
 
 	const toggle = document.getElementById("theme-toggle");
