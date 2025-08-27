@@ -500,6 +500,8 @@ document.addEventListener("DOMContentLoaded", () => {
 					deselectPreviousCell();
 					selectAllNumbers(nextColumnSelected);
 					selectAllShadows(nextColumnSelected);
+					disableAllNotesHighlight();
+					highlightNotes();
 				}
 			} else if (event.key == "ArrowDown") {
 				rowSelected = currentSelectedCell.parentElement;
@@ -515,6 +517,8 @@ document.addEventListener("DOMContentLoaded", () => {
 					deselectPreviousCell();
 					selectAllNumbers(nextColumnSelected);
 					selectAllShadows(nextColumnSelected);
+					disableAllNotesHighlight();
+					highlightNotes();
 				}
 			} else if (event.key == "ArrowLeft") {
 				if (currentSelectedCell.previousElementSibling != null) {
@@ -527,6 +531,8 @@ document.addEventListener("DOMContentLoaded", () => {
 					deselectPreviousCell();
 					selectAllNumbers(nextColumnSelected);
 					selectAllShadows(nextColumnSelected);
+					disableAllNotesHighlight();
+					highlightNotes();
 				}
 			} else if (event.key == "ArrowRight") {
 				if (currentSelectedCell.nextElementSibling != null) {
@@ -538,6 +544,8 @@ document.addEventListener("DOMContentLoaded", () => {
 					deselectPreviousCell();
 					selectAllNumbers(nextColumnSelected);
 					selectAllShadows(nextColumnSelected);
+					disableAllNotesHighlight();
+					highlightNotes();
 				}
 			} else if (event.key.toLowerCase() == "n") {
 				currentNoteMode = !currentNoteMode;

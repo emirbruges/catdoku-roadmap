@@ -71,6 +71,43 @@ body {
 	background-color: var(--catppuccin-base);
 }
 
+/* Topbar */
+.topbar {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 50px;
+	background: var(--catppuccin-crust);
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0 20px;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+	z-index: 10;
+}
+
+.topbar .title {
+	font-weight: bold;
+	color: var(--catppuccin-subtext-1);
+}
+
+.play-btn {
+	padding: 6px 14px;
+	border: 1px solid var(--catppuccin-overlay-1);
+	border-radius: 20px;
+	background: var(--catppuccin-base);
+	cursor: pointer;
+	font-weight: bold;
+	color: var(--catppuccin-blue);
+	transition: all 0.3s;
+}
+
+.play-btn:hover {
+	background: var(--catppuccin-blue);
+	color: var(--catppuccin-base);
+}
+
 /* Notification animations */
 
 @keyframes countdown-bar {
