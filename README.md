@@ -75,6 +75,6 @@ Development of cat images in cells and full mobile responsiveness is still ongoi
 
 License
 
-MIT License © [Your Name]
+MIT License © [Emir David Bruges Belaides]
 
 ---
