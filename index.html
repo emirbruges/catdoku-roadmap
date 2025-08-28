@@ -17,15 +17,6 @@
 			<button class="play-btn">Play</button>
 		</div>
 
-		<script>
-			document
-				.querySelector(".play-btn")
-				.addEventListener("click", () => {
-					window.location.href =
-						"https://emirbruges.github.io/catdoku-roadmap/game.html";
-				});
-		</script>
-
 		<div class="sidebar">
 			<div class="menu-item active">About</div>
 			<div class="menu-item">How to play ?</div>
@@ -74,6 +65,8 @@
 				you're currently learning. All this while seeing cute little
 				cats! (soon).
 			</p>
+			<h2>Where to play ?</h2>
+			<p>Here: <button class="play-btn">Play</button></p>
 			<h2>What are the rules ?</h2>
 			<ul>
 				<li>Sudoku grid consists of 9x9 spaces.</li>
@@ -110,5 +103,13 @@
 				or texting Emir Bruges trough slack.
 			</p>
 		</div>
+		<script>
+			document.querySelectorAll(".play-btn").forEach((element) =>
+				element.addEventListener("click", () => {
+					window.location.href =
+						"https://emirbruges.github.io/catdoku-roadmap/game.html";
+				}),
+			);
+		</script>
 	</body>
 </html>
