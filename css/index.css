@@ -131,9 +131,16 @@ button {
 }
 
 .content p {
-	font-size: 16px;
+	font-size: 1rem;
 	line-height: 1.6;
-	margin-bottom: 20px;
+	margin-bottom: 1.25rem;
+	color: var(--catppuccin-subtext-0);
+}
+
+.content li {
+	font-size: 1rem;
+	line-height: 1;
+	margin-bottom: 1.25rem;
 	color: var(--catppuccin-subtext-0);
 }
 
